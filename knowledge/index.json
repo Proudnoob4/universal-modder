@@ -6559,7 +6559,9 @@
    "OpenCode (DeepSeek V4.1 Flash)"
   ],
   "humans": [],
-  "links": []
+  "links": [
+   "https://github.com/carxt/JohnnyGuitarNVSE/blob/b3521cb0b577632473fa731b7b9f83fe346738bf/JG/internal/Game/Bethesda/BSShaderUtil.cpp"
+  ]
  },
  {
   "path": "techniques/hosting-a-decompiled-console-engine-as-a-native-dll-inside-a.md",
