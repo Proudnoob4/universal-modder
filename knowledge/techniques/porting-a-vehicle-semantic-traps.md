@@ -56,8 +56,9 @@ source (the consuming code in the guest, or a measurement).
 ### Two structural facts worth knowing up front (Halo 3 as the worked example)
 
 - **The travel is not in the vehicle tag.** Suspension travel lives in the **`jmad`** (animation graph)
-  `vehicle_suspension_block` (id 2376), **not** the `vehi`; and the `vehi` `havok vehicle physics` struct
-  has **no spring/damper/travel field at all**. The travel is **asymmetric** (full compression `0.131940`
+  `vehicle_suspension_block` (id 2376), **not** the `vehi`. The `vehi` `havok vehicle physics` struct has
+  **no spring-rate or travel field**: its only suspension inputs are `ground depth` and `ground damp factor`
+  (next bullet). The travel is **asymmetric** (full compression `0.131940`
   wu, full extension `0.307770` wu -> `0.17583 wu` total), so a symmetric `+-0.32` clamp was ~2x too big
   and wrong on both sides.
 - **No tag stores a spring frequency.** The engine computes the spring from `ground depth` (0.125 wu) +
@@ -106,7 +107,10 @@ source (the consuming code in the guest, or a measurement).
    deviation and only soften deliberately, documenting the deviation from the source.
 10. **A number handed to a host API comes out sub-pixel / a speck.** **Cause:** the value was left in
     the **guest's** world units but the host API consumes **host** units (the "213x bug": host units per
-    guest world unit). **Fix:** convert at the boundary; never pass a guest wu value into a host API.
+    guest world unit). That factor is the ratio of the two documented scales: a Halo world unit is 10 ft
+    (3.048 m, [c20](https://c20.reclaimers.net/general/scale/)) and a Gamebryo unit is 1/128 of 6 ft
+    (1.43 cm), so 3.048 / 0.01429 = 213.3. **Fix:** convert at the boundary; never pass a guest wu value into
+    a host API. Write the conversion down as in `bridge-contracts-ownership-units-and-lifecycle.md`.
 11. **The ride height is right when parked and wrong when driving.** **Cause:** the measurement was
     taken from a summary log line rather than the rendered contact; a `kTireHubZ` sign was blamed first
     and refuted. **Fix:** measure the *rendered* contact (offline from the mesh + bind matrices) and use
@@ -114,9 +118,19 @@ source (the consuming code in the guest, or a measurement).
 
 ## Seen in
 
-- [Halo 3's Warthog, Chief and weapons inside Fallout: New Vegas](../games/fallout-new-vegas/halo-3-warthog-chief-and-weapons-inside-fallout-new-vegas.md)
+- Halo 3's Warthog, Chief and weapons inside Fallout: New Vegas (the author's project; no field note or public
+  repository yet)
   - damping coefficient vs ratio (M6), hub vs tread (M4), region permutation vs texture swap (M0.12/M5),
     guessed near/far (M8), camera-relative steering (M2/M4), the jmad-vs-vehi travel fact (M2/M6).
+
+## Related
+
+- `bridge-contracts-ownership-units-and-lifecycle.md`: the units-and-axes function this note's conversion
+  column feeds.
+- `evidence-levels-for-mashup-claims.md` and `oracles-how-agents-know-a-mod-works.md`: how to label and prove
+  each row's value.
+- `hooking-a-host-post-world-render-pass-so-the-world-occludes-your-overlay.md`: gotcha 4 (frustum parity) in
+  full.
 
 ## What a future agent should try first
 
@@ -131,6 +145,8 @@ source (the consuming code in the guest, or a measurement).
    clip for the source camera, no guest frame for occlusion).
 
 ## Sources
+
+These are files in the project's own repository, which isn't public; the paths are kept for its author.
 
 - `docs/kb/PORTING_METHOD.md` sections 0-2 (the pipeline; the defect table; the port contract with the
   semantics column and the worked rows), section 3 (provenance and the self-echo rule).
