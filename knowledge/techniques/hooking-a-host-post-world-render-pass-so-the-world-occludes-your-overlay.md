@@ -5,7 +5,7 @@ tags: [rendering, occlusion, depth-buffer, hooking, projection, frustum-parity, 
 date: 2026-10-11
 agents: ["OpenCode (DeepSeek V4.1 Flash)"]
 humans: []
-links: []
+links: ["https://github.com/carxt/JohnnyGuitarNVSE/blob/b3521cb0b577632473fa731b7b9f83fe346738bf/JG/internal/Game/Bethesda/BSShaderUtil.cpp"]
 ---
 
 # Hooking a host engine's post-world render pass so world geometry occludes your overlay
@@ -136,15 +136,26 @@ config, and a throttled frame-time line. In the worked example:
    flags at the post-draw and test one such frame explicitly.
 9. **A cheap test quad "occludes" and the real object does not.** **Cause:** the quad's Z came from your
    config, not the live frustum (see 1). **Fix:** re-derive and re-test after parity lands.
-10. **Matrix-convention guess rolls the world.** **Cause:** the camera transform is column-major in
-    memory but consumed as a row-vector `out = M*p` (or vice versa). **Fix:** prove the convention from
-    the live engine - read the engine's own matrix and check a known direction.
+10. **Matrix-convention guess rolls the world.** **Cause:** a guessed convention: the camera transform's
+    memory order (row- or column-major) and the multiply order the code assumed (`M*p` with column vectors,
+    `p*M` with row vectors) didn't agree. **Fix:** prove the convention from the live engine - read the
+    engine's own matrix and check a known direction.
 
 ## Seen in
 
-- [Halo 3's Warthog, Chief and weapons inside Fallout: New Vegas](../games/fallout-new-vegas/halo-3-warthog-chief-and-weapons-inside-fallout-new-vegas.md)
-  - `BSShaderUtil::RenderScene` (`0x00B6C0D0`) hooked at its four call sites; live frustum `5.0 /
-  353840.0`; the shared-destructor dead end; the 60 fps occlusion clip.
+- Halo 3's Warthog, Chief and weapons inside Fallout: New Vegas (the author's project; no field note
+  or public repository yet)
+  - `BSShaderUtil::RenderScene` (`0x00B6C0D0`, cdecl, taking the `NiCamera` and the `BSShaderAccumulator`,
+    as JohnnyGuitarNVSE's `BSShaderUtil.cpp` also names it) hooked at its four call sites; live frustum
+    `5.0 / 353840.0`; the shared-destructor dead end; the 60 fps occlusion clip.
+
+## Related
+
+- `geometry-transfer-host-draws-guest-meshes.md`: the route this hook serves (the host draws the guest's
+  meshes), and restoring the host's render state after your draw.
+- `frame-compositing-depth-and-pose-sync.md`: the other route, where the guest's colour and depth are
+  composited into the host frame instead.
+- `porting-a-vehicle-semantic-traps.md`: the live near/far as one of several guessed meanings (gotcha 4).
 
 ## What a future agent should try first
 
@@ -159,6 +170,8 @@ config, and a throttled frame-time line. In the worked example:
    reference frame for the same shot on the other side.
 
 ## Sources
+
+These are files in the project's own repository, which isn't public; the paths are kept for its author.
 
 - `docs/kb/RENDERING_PATTERNS.md` sections 1-3, 6, 9 (overlay vs scene, frustum parity, the post-world
   window, blend/order, matrix order).
